@@ -26,11 +26,13 @@ const StudentLogin = ({ onLogin, onBack }) => {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('student', JSON.stringify(response.data.student));
       toast.success('Login successful!');
-      onLogin(response.data.student);
+      setTimeout(() => {
+        onLogin(response.data.student);
+      },1000);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Invalid credentials');
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleRegister = async (e) => {
@@ -41,11 +43,13 @@ const StudentLogin = ({ onLogin, onBack }) => {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('student', JSON.stringify(response.data.student));
       toast.success('Registration successful!');
-      onLogin(response.data.student);
+      setTimeout(() => {
+        onLogin(response.data.student);
+      }, 3000);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Registration failed');
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

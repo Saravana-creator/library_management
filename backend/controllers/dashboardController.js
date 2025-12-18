@@ -6,15 +6,19 @@ const getDashboardStats = async (req, res) => {
   try {
     const [
       totalBooks,
+      availableBooksResult,
       issuedBooks,
       returnedBooks,
       pendingApprovals
     ] = await Promise.all([
       Book.countDocuments({ status: 'active' }),
+      Book.aggregate([{ $match: { status: 'active' } }, { $group: { _id: null, total: { $sum: '$availableCopies' } } }]),
       IssueRecord.countDocuments({ status: 'issued' }),
       IssueRecord.countDocuments({ status: 'returned' }),
       ApprovalRequest.countDocuments({ status: 'pending' })
     ]);
+
+    const availableBooks = availableBooksResult[0]?.total || 0;
 
     const recentIssues = await IssueRecord.find({ status: 'issued' })
       .populate('bookId', 'title author')
@@ -29,6 +33,7 @@ const getDashboardStats = async (req, res) => {
     res.json({
       stats: {
         totalBooks,
+        availableBooks,
         issuedBooks,
         returnedBooks,
         pendingApprovals

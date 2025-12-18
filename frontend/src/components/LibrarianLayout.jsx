@@ -39,6 +39,12 @@ const LibrarianLayout = ({ children, onLogout, librarian }) => (
         >
           📋 Ready for Pickup
         </NavLink>
+        <NavLink 
+          to="/donate-books" 
+          className={({ isActive }) => `block px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
+        >
+          🎁 Approve Request to Donate Book
+        </NavLink>
       </nav>
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
         <button 

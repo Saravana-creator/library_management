@@ -11,6 +11,7 @@ import Books from './pages/Books';
 import Issues from './pages/Issues';
 import Approvals from './pages/Approvals';
 import ApprovedRequests from './pages/ApprovedRequests';
+import DonateBooks from './pages/DonateBooks';
 
 // Import student components
 import StudentLogin from './pages/student/StudentLogin';
@@ -19,6 +20,8 @@ import StudentBrowseBooks from './pages/student/StudentBrowseBooks';
 import StudentMyBooks from './pages/student/StudentMyBooks';
 import StudentDonateBook from './pages/student/StudentDonateBook';
 import StudentProfile from './pages/student/StudentProfile';
+import StudentOverdue from './pages/student/StudentOverdue';
+import OverdueAlert from './components/OverdueAlert';
 
 // Import librarian components
 import LibrarianLayout from './components/LibrarianLayout';
@@ -113,15 +116,18 @@ function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('librarian');
-    localStorage.removeItem('student');
-    setIsAuthenticated(false);
-    setRole(null);
-    setSelectedRole(null);
-    setLibrarian(null);
-    setStudent(null);
+    toast.success('Logging out...');
+    setTimeout(() => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('librarian');
+      localStorage.removeItem('student');
+      setIsAuthenticated(false);
+      setRole(null);
+      setSelectedRole(null);
+      setLibrarian(null);
+      setStudent(null);
+    },1000);
   };
 
   const handleBackToRoleSelection = () => {
@@ -149,14 +155,17 @@ function App() {
               <Route path="/issues" element={<Issues />} />
               <Route path="/approvals" element={<Approvals />} />
               <Route path="/approved-requests" element={<ApprovedRequests />} />
+              <Route path="/donate-books" element={<DonateBooks />} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </LibrarianLayout>
         ) : (
           <StudentLayout onLogout={handleLogout} student={student}>
+            <OverdueAlert />
             <Routes>
               <Route path="/" element={<StudentBrowseBooks />} />
               <Route path="/my-books" element={<StudentMyBooks />} />
+              <Route path="/overdue" element={<StudentOverdue />} />
               <Route path="/donate" element={<StudentDonateBook />} />
               <Route path="/profile" element={<StudentProfile />} />
               <Route path="*" element={<Navigate to="/" />} />

@@ -130,6 +130,53 @@ const getDonationStatus = async (req, res) => {
   }
 };
 
+const getOverdueBooks = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const twoDaysFromNow = new Date(today);
+    twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2);
+
+    const records = await IssueRecord.find({ studentId, status: 'issued' }).populate('bookId', 'title');
+    const overdueBooks = [];
+
+    records.forEach(record => {
+      const dueDate = new Date(record.dueDate);
+      dueDate.setHours(0, 0, 0, 0);
+      
+      // Show alert if due date is within 2 days or already overdue
+      if (dueDate <= twoDaysFromNow) {
+        const daysDifference = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
+        let penalty = 0;
+        let status = 'due-soon';
+        
+        if (daysDifference < 0) {
+          // Overdue
+          penalty = Math.abs(daysDifference) * 10;
+          status = 'overdue';
+        } else if (daysDifference === 0) {
+          status = 'due-today';
+        }
+        
+        overdueBooks.push({
+          bookTitle: record.bookId?.title,
+          dueDate: record.dueDate,
+          daysOverdue: Math.abs(daysDifference),
+          penalty,
+          status,
+          daysDifference
+        });
+      }
+    });
+
+    res.json({ overdueBooks });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching overdue books', error: error.message });
+  }
+};
+
 module.exports = {
   getBooks,
   requestBorrow,
@@ -137,5 +184,6 @@ module.exports = {
   checkDeadlineAlerts,
   calculatePenalties,
   donatebook,
-  getDonationStatus
+  getDonationStatus,
+  getOverdueBooks
 };

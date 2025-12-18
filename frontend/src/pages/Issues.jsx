@@ -25,15 +25,31 @@ const Issues = () => {
 
   const fetchIssues = async () => {
     try {
-      const filters = statusFilter ? { status: statusFilter } : {};
+      let allIssues;
       
       if (isOnline) {
-        const response = await issuesAPI.getIssues(filters);
-        setIssues(response.data.records);
+        const response = await issuesAPI.getIssues();
+        allIssues = response.data.records;
       } else {
-        const offlineIssues = await offlineService.getIssues(filters);
-        setIssues(offlineIssues);
+        allIssues = await offlineService.getIssues();
       }
+
+      // Apply status filtering
+      let filteredIssues = allIssues;
+      if (statusFilter) {
+        if (statusFilter === 'overdue') {
+          filteredIssues = allIssues.filter(issue => {
+            if (issue.status !== 'issued') return false;
+            const today = new Date();
+            const due = new Date(issue.dueDate);
+            return today > due;
+          });
+        } else {
+          filteredIssues = allIssues.filter(issue => issue.status === statusFilter);
+        }
+      }
+      
+      setIssues(filteredIssues);
     } catch (error) {
       toast.error('Error fetching issues');
     } finally {

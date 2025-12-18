@@ -184,7 +184,7 @@ const getApprovedRequests = async (req, res) => {
 
 const markAsTaken = async (req, res) => {
   try {
-    const { requestId } = req.body;
+    const { requestId, returnDate } = req.body;
     const librarianId = req.user.id;
 
     const request = await BorrowRequest.findById(requestId)
@@ -195,8 +195,16 @@ const markAsTaken = async (req, res) => {
       return res.status(400).json({ message: 'Invalid request' });
     }
 
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 14);
+    const dueDate = returnDate ? new Date(returnDate) : (() => {
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() + 14);
+      return defaultDate;
+    })();
+    
+    // Ensure the date is valid
+    if (isNaN(dueDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid return date provided' });
+    }
 
     const issue = new IssueRecord({
       bookId: request.bookId._id,

@@ -1,19 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpen, Users, CheckCircle, Clock } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+
+const api = axios.create({ baseURL: 'http://localhost:5000/api' });
+
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
 const Dashboard = () => {
-  const { librarian } = useAuth();
-  const [stats] = useState({
-    totalBooks: 25,
-    issuedBooks: 8,
-    returnedBooks: 42,
-    pendingApprovals: 3
+  const [librarian, setLibrarian] = useState(null);
+  
+  useEffect(() => {
+    const storedLibrarian = localStorage.getItem('librarian');
+    if (storedLibrarian) setLibrarian(JSON.parse(storedLibrarian));
+  }, []);
+  const [stats, setStats] = useState({
+    totalBooks: 0,
+    issuedBooks: 0,
+    returnedBooks: 0,
+    pendingApprovals: 0
   });
-  const loading = false;
-  const isOnline = true;
+  const [loading, setLoading] = useState(true);
 
-  console.log('Dashboard rendering for:', librarian);
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const response = await api.get('/dashboard/stats');
+      setStats(response.data.stats);
+    } catch (error) {
+      toast.error('Failed to load dashboard stats');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const statCards = [
     {
@@ -49,7 +75,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <LoadingSpinner size="lg" />
+        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -81,15 +107,24 @@ const Dashboard = () => {
         <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
           <div className="space-y-3">
-            <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+            <button 
+              onClick={() => window.location.href = '/books'}
+              className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+            >
               <div className="font-medium text-gray-900">Add New Book</div>
               <div className="text-sm text-gray-600">Add a new book to the library</div>
             </button>
-            <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+            <button 
+              onClick={() => window.location.href = '/issues'}
+              className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+            >
               <div className="font-medium text-gray-900">Issue Book</div>
               <div className="text-sm text-gray-600">Issue a book to a student</div>
             </button>
-            <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+            <button 
+              onClick={() => window.location.href = '/approvals'}
+              className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+            >
               <div className="font-medium text-gray-900">Review Approvals</div>
               <div className="text-sm text-gray-600">Review pending book donations</div>
             </button>

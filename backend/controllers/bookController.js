@@ -43,7 +43,11 @@ const createBook = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const book = new Book(req.body);
+    const bookData = {
+      ...req.body,
+      availableCopies: req.body.totalCopies
+    };
+    const book = new Book(bookData);
     await book.save();
     res.status(201).json(book);
   } catch (error) {
@@ -56,10 +60,19 @@ const createBook = async (req, res) => {
 
 const updateBook = async (req, res) => {
   try {
-    const book = await Book.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const book = await Book.findById(req.params.id);
     if (!book) {
       return res.status(404).json({ message: 'Book not found' });
     }
+
+    // If totalCopies is being updated, adjust availableCopies proportionally
+    if (req.body.totalCopies && req.body.totalCopies !== book.totalCopies) {
+      const difference = req.body.totalCopies - book.totalCopies;
+      req.body.availableCopies = book.availableCopies + difference;
+    }
+
+    Object.assign(book, req.body);
+    await book.save();
     res.json(book);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

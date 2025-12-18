@@ -14,6 +14,7 @@ const router = express.Router();
 
 router.get('/books', authenticate, getBooks);
 router.post('/borrow-request', authenticate, requestBorrow);
+router.get('/my-books', authenticate, getBorrowingHistory);
 router.get('/borrowing-history', authenticate, getBorrowingHistory);
 router.get('/deadline-alerts', authenticate, checkDeadlineAlerts);
 router.get('/penalties', authenticate, calculatePenalties);

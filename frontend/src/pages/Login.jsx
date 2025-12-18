@@ -1,44 +1,25 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { BookOpen } from 'lucide-react';
 import { authAPI } from '../services/api';
-import { useAuth } from '../hooks/useAuth';
-import LoadingSpinner from '../components/common/LoadingSpinner';
 
-const Login = () => {
+const Login = ({ onLogin, onBack }) => {
   const [loading, setLoading] = useState(false);
-  const { register, handleSubmit, formState: { errors } } = useForm();
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
 
-  const onSubmit = async (data) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
     try {
-      // Try online login first
-      const response = await authAPI.login(data);
-      login(response.data.token, response.data.librarian);
+      const response = await authAPI.login(credentials);
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('librarian', JSON.stringify(response.data.librarian));
       toast.success('Login successful!');
-      navigate('/');
+      onLogin(response.data.librarian);
     } catch (error) {
-      // Fallback to offline demo login
-      if (data.username === 'admin' && data.password === 'password123') {
-        const demoLibrarian = {
-          id: 'demo-id',
-          username: 'admin',
-          email: 'admin@library.com',
-          role: 'librarian'
-        };
-        login('demo-token', demoLibrarian);
-        toast.success('Login successful (Offline Mode)!');
-        navigate('/');
-      } else {
-        toast.error('Invalid credentials. Use admin/password123 for demo.');
-      }
-    } finally {
-      setLoading(false);
+      toast.error('Invalid credentials');
     }
+    setLoading(false);
   };
 
   return (
@@ -54,20 +35,27 @@ const Login = () => {
           <p className="text-gray-600 mt-2">Sign in to your librarian account</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="mb-4 text-blue-600 hover:text-blue-800 flex items-center gap-2"
+          >
+            ← Back to role selection
+          </button>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Username
             </label>
             <input
               type="text"
-              {...register('username', { required: 'Username is required' })}
-              className="input-field"
+              value={credentials.username}
+              onChange={(e) => setCredentials({...credentials, username: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter your username"
+              required
             />
-            {errors.username && (
-              <p className="text-red-500 text-sm mt-1">{errors.username.message}</p>
-            )}
           </div>
 
           <div>
@@ -76,33 +64,24 @@ const Login = () => {
             </label>
             <input
               type="password"
-              {...register('password', { required: 'Password is required' })}
-              className="input-field"
+              value={credentials.password}
+              onChange={(e) => setCredentials({...credentials, password: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter your password"
+              required
             />
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
-            )}
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full btn-primary flex items-center justify-center gap-2"
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading && <LoadingSpinner size="sm" />}
-            Sign In
+            {loading ? 'Logging in...' : 'Sign In'}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            Demo credentials: <strong>admin</strong> / <strong>password123</strong>
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            Works offline if backend is not running
-          </p>
-        </div>
+
       </div>
     </div>
   );

@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 
 // Import pages
+import LandingPage from './pages/LandingPage';
+import AdminLandingPage from './pages/AdminLandingPage';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Books from './pages/Books';
@@ -51,9 +53,17 @@ api.interceptors.response.use(
   }
 );
 
-const RoleSelection = ({ onSelectRole }) => (
+const RoleSelection = ({ onSelectRole, onBack }) => (
   <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
     <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="mb-4 text-blue-600 hover:text-blue-800 flex items-center gap-2"
+        >
+          ← Back to Home
+        </button>
+      )}
       <h1 className="text-2xl font-bold text-center mb-6">Library Management System</h1>
       <p className="text-center text-gray-600 mb-8">Select your role to continue</p>
       <div className="space-y-4">
@@ -75,6 +85,8 @@ const RoleSelection = ({ onSelectRole }) => (
 );
 
 function App() {
+  const [showLanding, setShowLanding] = useState(true);
+  const [showAdminLanding, setShowAdminLanding] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [role, setRole] = useState(null);
   const [selectedRole, setSelectedRole] = useState(null);
@@ -84,7 +96,7 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedRole = localStorage.getItem('role');
-    if (token && storedRole) {
+    if (token && storedRole && !showLanding && !showAdminLanding && !selectedRole) {
       setIsAuthenticated(true);
       setRole(storedRole);
       if (storedRole === 'librarian') {
@@ -95,7 +107,27 @@ function App() {
         if (storedStudent) setStudent(JSON.parse(storedStudent));
       }
     }
-  }, []);
+  }, [showLanding, showAdminLanding, selectedRole]);
+
+  const handleGetStarted = () => {
+    setShowLanding(false);
+    if (showAdminLanding) {
+      setShowAdminLanding(false);
+      setSelectedRole('librarian');
+    } else {
+      setSelectedRole('student');
+    }
+  };
+
+  const handleAdminAccess = () => {
+    setShowLanding(false);
+    setShowAdminLanding(true);
+  };
+
+  const handleBackToUser = () => {
+    setShowLanding(true);
+    setShowAdminLanding(false);
+  };
 
   const handleSelectRole = (role) => {
     setSelectedRole(role);
@@ -127,6 +159,14 @@ function App() {
       setSelectedRole(null);
       setLibrarian(null);
       setStudent(null);
+      // Redirect to respective landing page
+      if (role === 'librarian') {
+        setShowAdminLanding(true);
+        setShowLanding(false);
+      } else {
+        setShowLanding(true);
+        setShowAdminLanding(false);
+      }
     },1000);
   };
 
@@ -134,17 +174,30 @@ function App() {
     setSelectedRole(null);
   };
 
+  const handleBackToLanding = () => {
+    if (showAdminLanding) {
+      setShowAdminLanding(true);
+    } else {
+      setShowLanding(true);
+    }
+    setSelectedRole(null);
+  };
+
   return (
     <Router>
       <div className="App">
-        {!isAuthenticated ? (
+        {showLanding ? (
+          <LandingPage onGetStarted={handleGetStarted} onAdminAccess={handleAdminAccess} />
+        ) : showAdminLanding ? (
+          <AdminLandingPage onGetStarted={handleGetStarted} onBackToUser={handleBackToUser} />
+        ) : !isAuthenticated ? (
           <>
-            {!selectedRole ? (
-              <RoleSelection onSelectRole={handleSelectRole} />
-            ) : selectedRole === 'librarian' ? (
-              <Login onLogin={handleLibrarianLogin} onBack={handleBackToRoleSelection} />
+            {selectedRole === 'librarian' ? (
+              <Login onLogin={handleLibrarianLogin} onBack={handleBackToLanding} />
+            ) : selectedRole === 'student' ? (
+              <StudentLogin onLogin={handleStudentLogin} onBack={handleBackToLanding} />
             ) : (
-              <StudentLogin onLogin={handleStudentLogin} onBack={handleBackToRoleSelection} />
+              <RoleSelection onSelectRole={handleSelectRole} onBack={handleBackToLanding} />
             )}
           </>
         ) : role === 'librarian' ? (

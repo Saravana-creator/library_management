@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Plus, Search, RotateCcw } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faSearch, faUndo } from '@fortawesome/free-solid-svg-icons';
 import toast from 'react-hot-toast';
 import { issuesAPI, booksAPI } from '../services/api';
 import { offlineService } from '../services/offlineDB';
@@ -134,7 +135,7 @@ const Issues = () => {
           <p className="text-gray-600 mt-2">Manage book transactions</p>
         </div>
         <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
-          <Plus size={20} />
+          <FontAwesomeIcon icon={faPlus} />
           Issue Book
         </button>
       </div>
@@ -212,7 +213,7 @@ const Issues = () => {
                           onClick={() => handleReturn(issue._id || issue.id)}
                           className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
                         >
-                          <RotateCcw size={14} />
+                          <FontAwesomeIcon icon={faUndo} />
                           Return
                         </button>
                       )}

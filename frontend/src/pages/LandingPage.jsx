@@ -1,25 +1,26 @@
 import React from 'react';
-import { BookOpen, Search, Heart, Bell, CheckCircle, ArrowRight, UserPlus } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBook, faSearch, faHeart, faBell, faCheckCircle, faArrowRight, faUserPlus } from '@fortawesome/free-solid-svg-icons';
 
 const LandingPage = ({ onGetStarted, onAdminAccess }) => {
   const features = [
     {
-      icon: Search,
+      icon: faSearch,
       title: "Browse Books",
       description: "Search and discover books from our extensive digital catalog"
     },
     {
-      icon: BookOpen,
+      icon: faBook,
       title: "Request Books",
       description: "Easy book borrowing with instant approval notifications"
     },
     {
-      icon: Heart,
+      icon: faHeart,
       title: "Donate Books",
       description: "Contribute to the library by donating your books"
     },
     {
-      icon: Bell,
+      icon: faBell,
       title: "Smart Notifications",
       description: "Get timely reminders for due dates and book availability"
     }
@@ -42,7 +43,7 @@ const LandingPage = ({ onGetStarted, onAdminAccess }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="bg-green-600 p-2 rounded-lg">
-                <BookOpen className="text-white" size={24} />
+                <FontAwesomeIcon icon={faBook} className="text-white text-xl" />
               </div>
               <h1 className="text-xl font-bold text-gray-900">LibraryMS</h1>
             </div>
@@ -81,7 +82,7 @@ const LandingPage = ({ onGetStarted, onAdminAccess }) => {
               className="bg-green-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
             >
               Start Reading Today
-              <ArrowRight size={20} />
+              <FontAwesomeIcon icon={faArrowRight} />
             </button>
             <button
               onClick={onAdminAccess}
@@ -109,7 +110,7 @@ const LandingPage = ({ onGetStarted, onAdminAccess }) => {
             {features.map((feature, index) => (
               <div key={index} className="text-center p-6 rounded-xl hover:shadow-lg transition-shadow">
                 <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <feature.icon className="text-green-600" size={32} />
+                  <FontAwesomeIcon icon={feature.icon} className="text-green-600 text-2xl" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
                 <p className="text-gray-600">{feature.description}</p>
@@ -130,7 +131,7 @@ const LandingPage = ({ onGetStarted, onAdminAccess }) => {
               <div className="space-y-4">
                 {benefits.map((benefit, index) => (
                   <div key={index} className="flex items-start gap-3">
-                    <CheckCircle className="text-green-500 mt-1 flex-shrink-0" size={20} />
+                    <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 mt-1 flex-shrink-0" />
                     <p className="text-gray-700">{benefit}</p>
                   </div>
                 ))}
@@ -139,7 +140,7 @@ const LandingPage = ({ onGetStarted, onAdminAccess }) => {
             <div className="bg-white p-8 rounded-2xl shadow-xl">
               <div className="text-center">
                 <div className="bg-gradient-to-r from-green-600 to-emerald-600 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <UserPlus className="text-white" size={40} />
+                  <FontAwesomeIcon icon={faUserPlus} className="text-white text-3xl" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Join Our Library Community</h3>
                 <p className="text-gray-600 mb-6">
@@ -163,7 +164,7 @@ const LandingPage = ({ onGetStarted, onAdminAccess }) => {
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
               <div className="bg-green-600 p-2 rounded-lg">
-                <BookOpen className="text-white" size={24} />
+                <FontAwesomeIcon icon={faBook} className="text-white text-xl" />
               </div>
               <h3 className="text-xl font-bold">LibraryMS</h3>
             </div>

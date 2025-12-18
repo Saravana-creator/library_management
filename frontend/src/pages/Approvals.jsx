@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Check, X, Clock } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheck, faTimes, faClock } from '@fortawesome/free-solid-svg-icons';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
@@ -134,14 +135,14 @@ const Approvals = () => {
                   onClick={() => handleReview(approval, 'approved')}
                   className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
                 >
-                  <Check size={16} />
+                  <FontAwesomeIcon icon={faCheck} />
                   Approve
                 </button>
                 <button
                   onClick={() => handleReview(approval, 'rejected')}
                   className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
                 >
-                  <X size={16} />
+                  <FontAwesomeIcon icon={faTimes} />
                   Reject
                 </button>
               </div>
@@ -151,7 +152,7 @@ const Approvals = () => {
 
         {approvals.length === 0 && (
           <div className="bg-white rounded-lg shadow p-8 text-center">
-            <Clock className="mx-auto text-gray-400 mb-4" size={48} />
+            <FontAwesomeIcon icon={faClock} className="mx-auto text-gray-400 mb-4 text-3xl" />
             <p className="text-gray-500">No {statusFilter} approval requests found.</p>
           </div>
         )}

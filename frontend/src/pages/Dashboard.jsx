@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Users, CheckCircle, Clock } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBook, faUsers, faCheckCircle, faClock } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -48,28 +49,28 @@ const Dashboard = () => {
     {
       title: 'Available Books',
       value: stats.availableBooks,
-      icon: BookOpen,
+      icon: faBook,
       color: 'bg-blue-500',
       bgColor: 'bg-blue-50'
     },
     {
       title: 'Issued Books',
       value: stats.issuedBooks,
-      icon: Users,
+      icon: faUsers,
       color: 'bg-orange-500',
       bgColor: 'bg-orange-50'
     },
     {
       title: 'Returned Books',
       value: stats.returnedBooks,
-      icon: CheckCircle,
+      icon: faCheckCircle,
       color: 'bg-green-500',
       bgColor: 'bg-green-50'
     },
     {
       title: 'Pending Approvals',
       value: stats.pendingApprovals,
-      icon: Clock,
+      icon: faClock,
       color: 'bg-yellow-500',
       bgColor: 'bg-yellow-50'
     }
@@ -99,7 +100,7 @@ const Dashboard = () => {
                 <p className="text-3xl font-bold text-gray-900 mt-2">{card.value}</p>
               </div>
               <div className={`p-3 rounded-full ${card.color}`}>
-                <card.icon className="text-white" size={24} />
+                <FontAwesomeIcon icon={card.icon} className="text-white text-xl" />
               </div>
             </div>
           </div>

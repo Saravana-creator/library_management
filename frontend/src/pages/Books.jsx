@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2 } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faSearch, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
@@ -111,7 +112,7 @@ const Books = () => {
           <p className="text-gray-600 mt-2">Manage your library's book collection</p>
         </div>
         <button onClick={openModal} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
-          <Plus size={20} />
+          <FontAwesomeIcon icon={faPlus} />
           Add Book
         </button>
       </div>
@@ -119,7 +120,7 @@ const Books = () => {
       <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search books by title, author, or ISBN..."
@@ -170,13 +171,13 @@ const Books = () => {
                         onClick={() => handleEdit(book)}
                         className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                       >
-                        <Edit size={16} />
+                        <FontAwesomeIcon icon={faEdit} />
                       </button>
                       <button
                         onClick={() => handleDelete(book._id)}
                         className="p-1 text-red-600 hover:bg-red-50 rounded"
                       >
-                        <Trash2 size={16} />
+                        <FontAwesomeIcon icon={faTrash} />
                       </button>
                     </div>
                   </td>

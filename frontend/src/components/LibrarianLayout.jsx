@@ -1,5 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChartBar, faBook, faUsers, faCheck, faClipboard, faGift, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 
 const LibrarianLayout = ({ children, onLogout, librarian }) => (
   <div className="flex min-h-screen bg-gray-50">
@@ -13,37 +15,37 @@ const LibrarianLayout = ({ children, onLogout, librarian }) => (
           to="/" 
           className={({ isActive }) => `block px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
         >
-          📊 Dashboard
+          <FontAwesomeIcon icon={faChartBar} className="mr-2" /> Dashboard
         </NavLink>
         <NavLink 
           to="/books" 
           className={({ isActive }) => `block px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
         >
-          📚 Books
+          <FontAwesomeIcon icon={faBook} className="mr-2" /> Books
         </NavLink>
         <NavLink 
           to="/issues" 
           className={({ isActive }) => `block px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
         >
-          👥 Issues
+          <FontAwesomeIcon icon={faUsers} className="mr-2" /> Issues
         </NavLink>
         <NavLink 
           to="/approvals" 
           className={({ isActive }) => `block px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
         >
-          ✅ Approvals
+          <FontAwesomeIcon icon={faCheck} className="mr-2" /> Approvals
         </NavLink>
         <NavLink 
           to="/approved-requests" 
           className={({ isActive }) => `block px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
         >
-          📋 Ready for Pickup
+          <FontAwesomeIcon icon={faClipboard} className="mr-2" /> Ready for Pickup
         </NavLink>
         <NavLink 
           to="/donate-books" 
           className={({ isActive }) => `block px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
         >
-          🎁 Approve Request to Donate Book
+          <FontAwesomeIcon icon={faGift} className="mr-2" /> Approve Request to Donate Book
         </NavLink>
       </nav>
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
@@ -51,7 +53,7 @@ const LibrarianLayout = ({ children, onLogout, librarian }) => (
           onClick={onLogout} 
           className="w-full px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
         >
-          🚪 Logout
+          <FontAwesomeIcon icon={faSignOutAlt} className="mr-2" /> Logout
         </button>
       </div>
     </div>

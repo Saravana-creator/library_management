@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBook, faUser, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
 // Import pages
 import LandingPage from './pages/LandingPage';
@@ -61,7 +63,7 @@ const RoleSelection = ({ onSelectRole, onBack }) => (
           onClick={onBack}
           className="mb-4 text-blue-600 hover:text-blue-800 flex items-center gap-2"
         >
-          ← Back to Home
+          <FontAwesomeIcon icon={faArrowLeft} /> Back to Home
         </button>
       )}
       <h1 className="text-2xl font-bold text-center mb-6">Library Management System</h1>
@@ -69,15 +71,15 @@ const RoleSelection = ({ onSelectRole, onBack }) => (
       <div className="space-y-4">
         <button 
           onClick={() => onSelectRole('librarian')} 
-          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-semibold transition-colors"
+          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-semibold transition-colors flex items-center justify-center gap-2"
         >
-          📚 Librarian Login
+          <FontAwesomeIcon icon={faBook} /> Librarian Login
         </button>
         <button 
           onClick={() => onSelectRole('student')} 
-          className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold transition-colors"
+          className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold transition-colors flex items-center justify-center gap-2"
         >
-          👤 Student Portal
+          <FontAwesomeIcon icon={faUser} /> Student Portal
         </button>
       </div>
     </div>

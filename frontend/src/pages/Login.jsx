@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { BookOpen } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBook, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { authAPI } from '../services/api';
 
 const Login = ({ onLogin, onBack }) => {
@@ -30,7 +31,7 @@ const Login = ({ onLogin, onBack }) => {
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <div className="bg-blue-600 p-3 rounded-full">
-              <BookOpen className="text-white" size={32} />
+              <FontAwesomeIcon icon={faBook} className="text-white text-2xl" />
             </div>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Library Management</h1>
@@ -42,7 +43,7 @@ const Login = ({ onLogin, onBack }) => {
             onClick={onBack}
             className="mb-4 text-blue-600 hover:text-blue-800 flex items-center gap-2"
           >
-            ← Back to role selection
+            <FontAwesomeIcon icon={faArrowLeft} /> Back to role selection
           </button>
         )}
         <form onSubmit={handleSubmit} className="space-y-6">

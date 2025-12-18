@@ -130,30 +130,6 @@ const Dashboard = () => {
             </button>
           </div>
         </div>
-
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">System Status</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-              <span className="font-medium text-gray-700">Connection Status</span>
-              <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                Online
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-              <span className="font-medium text-gray-700">Data Sync</span>
-              <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                Up to date
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-              <span className="font-medium text-gray-700">Offline Mode</span>
-              <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                Available
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

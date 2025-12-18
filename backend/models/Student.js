@@ -28,7 +28,9 @@ const borrowRequestSchema = new mongoose.Schema({
   bookId: { type: mongoose.Schema.Types.ObjectId, ref: 'Book', required: true },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   requestDate: { type: Date, default: Date.now },
-  approvedDate: { type: Date }
+  approvedDate: { type: Date },
+  taken: { type: Boolean, default: false },
+  takenDate: { type: Date }
 }, { timestamps: true });
 
 const donationSchema = new mongoose.Schema({

@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Books from './pages/Books';
 import Issues from './pages/Issues';
 import Approvals from './pages/Approvals';
+import ApprovedRequests from './pages/ApprovedRequests';
 
 // Import student components
 import StudentLogin from './pages/student/StudentLogin';
@@ -147,6 +148,7 @@ function App() {
               <Route path="/books" element={<Books />} />
               <Route path="/issues" element={<Issues />} />
               <Route path="/approvals" element={<Approvals />} />
+              <Route path="/approved-requests" element={<ApprovedRequests />} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </LibrarianLayout>

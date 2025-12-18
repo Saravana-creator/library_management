@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
 import { Plus, Search, Edit, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { booksAPI } from '../services/api';
-import { offlineService } from '../services/offlineDB';
-import { useOnlineStatus } from '../hooks/useOnlineStatus';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import StatusBadge from '../components/common/StatusBadge';
+import axios from 'axios';
+
+const api = axios.create({ baseURL: 'http://localhost:5000/api' });
+
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
 const Books = () => {
   const [books, setBooks] = useState([]);
@@ -15,30 +18,26 @@ const Books = () => {
   const [editingBook, setEditingBook] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  
-  const isOnline = useOnlineStatus();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm();
+  const [formData, setFormData] = useState({
+    title: '',
+    author: '',
+    isbn: '',
+    category: '',
+    totalCopies: 1
+  });
 
   const categories = ['Fiction', 'Non-Fiction', 'Science', 'Technology', 'History', 'Biography'];
 
   useEffect(() => {
     fetchBooks();
-  }, [isOnline, searchTerm, selectedCategory]);
+  }, [searchTerm, selectedCategory]);
 
   const fetchBooks = async () => {
     try {
-      const filters = {
-        search: searchTerm,
-        category: selectedCategory
-      };
-
-      if (isOnline) {
-        const response = await booksAPI.getBooks(filters);
-        setBooks(response.data.books);
-      } else {
-        const offlineBooks = await offlineService.getBooks(filters);
-        setBooks(offlineBooks);
-      }
+      const response = await api.get('/books', {
+        params: { search: searchTerm, category: selectedCategory }
+      });
+      setBooks(response.data.books || []);
     } catch (error) {
       toast.error('Error fetching books');
     } finally {
@@ -46,27 +45,20 @@ const Books = () => {
     }
   };
 
-  const onSubmit = async (data) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
       if (editingBook) {
-        if (isOnline) {
-          await booksAPI.updateBook(editingBook.id, data);
-        } else {
-          await offlineService.updateBook(editingBook.id, data);
-        }
+        await api.put(`/books/${editingBook._id}`, formData);
         toast.success('Book updated successfully');
       } else {
-        if (isOnline) {
-          await booksAPI.createBook(data);
-        } else {
-          await offlineService.addBook(data);
-        }
+        await api.post('/books', formData);
         toast.success('Book added successfully');
       }
       
       setShowModal(false);
       setEditingBook(null);
-      reset();
+      setFormData({ title: '', author: '', isbn: '', category: '', totalCopies: 1 });
       fetchBooks();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error saving book');
@@ -75,18 +67,20 @@ const Books = () => {
 
   const handleEdit = (book) => {
     setEditingBook(book);
-    reset(book);
+    setFormData({
+      title: book.title,
+      author: book.author,
+      isbn: book.isbn,
+      category: book.category,
+      totalCopies: book.totalCopies
+    });
     setShowModal(true);
   };
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this book?')) {
       try {
-        if (isOnline) {
-          await booksAPI.deleteBook(id);
-        } else {
-          await offlineService.deleteBook(id);
-        }
+        await api.delete(`/books/${id}`);
         toast.success('Book deleted successfully');
         fetchBooks();
       } catch (error) {
@@ -97,12 +91,16 @@ const Books = () => {
 
   const openModal = () => {
     setEditingBook(null);
-    reset();
+    setFormData({ title: '', author: '', isbn: '', category: '', totalCopies: 1 });
     setShowModal(true);
   };
 
   if (loading) {
-    return <LoadingSpinner size="lg" className="h-64" />;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   return (
@@ -112,13 +110,13 @@ const Books = () => {
           <h1 className="text-3xl font-bold text-gray-900">Books Management</h1>
           <p className="text-gray-600 mt-2">Manage your library's book collection</p>
         </div>
-        <button onClick={openModal} className="btn-primary flex items-center gap-2">
+        <button onClick={openModal} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
           <Plus size={20} />
           Add Book
         </button>
       </div>
 
-      <div className="card mb-6">
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -127,13 +125,13 @@ const Books = () => {
               placeholder="Search books by title, author, or ISBN..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-field pl-10"
+              className="w-full pl-10 px-3 py-2 border rounded-lg"
             />
           </div>
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="input-field md:w-48"
+            className="px-3 py-2 border rounded-lg md:w-48"
           >
             <option value="">All Categories</option>
             {categories.map(category => (
@@ -143,32 +141,28 @@ const Books = () => {
         </div>
       </div>
 
-      <div className="card">
+      <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200">
+              <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Title</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Author</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">ISBN</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Category</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Copies</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody>
               {books.map((book) => (
-                <tr key={book._id || book.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <tr key={book._id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-3 px-4 font-medium text-gray-900">{book.title}</td>
                   <td className="py-3 px-4 text-gray-600">{book.author}</td>
                   <td className="py-3 px-4 text-gray-600">{book.isbn}</td>
                   <td className="py-3 px-4 text-gray-600">{book.category}</td>
                   <td className="py-3 px-4 text-gray-600">
                     {book.availableCopies}/{book.totalCopies}
-                  </td>
-                  <td className="py-3 px-4">
-                    <StatusBadge status={book.status} />
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex gap-2">
@@ -179,7 +173,7 @@ const Books = () => {
                         <Edit size={16} />
                       </button>
                       <button
-                        onClick={() => handleDelete(book._id || book.id)}
+                        onClick={() => handleDelete(book._id)}
                         className="p-1 text-red-600 hover:bg-red-50 rounded"
                       >
                         <Trash2 size={16} />
@@ -206,46 +200,53 @@ const Books = () => {
               {editingBook ? 'Edit Book' : 'Add New Book'}
             </h2>
             
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                 <input
-                  {...register('title', { required: 'Title is required' })}
-                  className="input-field"
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  required
                 />
-                {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
                 <input
-                  {...register('author', { required: 'Author is required' })}
-                  className="input-field"
+                  type="text"
+                  value={formData.author}
+                  onChange={(e) => setFormData({...formData, author: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  required
                 />
-                {errors.author && <p className="text-red-500 text-sm">{errors.author.message}</p>}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">ISBN</label>
                 <input
-                  {...register('isbn', { required: 'ISBN is required' })}
-                  className="input-field"
+                  type="text"
+                  value={formData.isbn}
+                  onChange={(e) => setFormData({...formData, isbn: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  required
                 />
-                {errors.isbn && <p className="text-red-500 text-sm">{errors.isbn.message}</p>}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                 <select
-                  {...register('category', { required: 'Category is required' })}
-                  className="input-field"
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  required
                 >
                   <option value="">Select Category</option>
                   {categories.map(category => (
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
-                {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
               </div>
 
               <div>
@@ -253,20 +254,21 @@ const Books = () => {
                 <input
                   type="number"
                   min="1"
-                  {...register('totalCopies', { required: 'Total copies is required', min: 1 })}
-                  className="input-field"
+                  value={formData.totalCopies}
+                  onChange={(e) => setFormData({...formData, totalCopies: parseInt(e.target.value)})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  required
                 />
-                {errors.totalCopies && <p className="text-red-500 text-sm">{errors.totalCopies.message}</p>}
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button type="submit" className="btn-primary flex-1">
+                <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
                   {editingBook ? 'Update' : 'Add'} Book
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="btn-secondary flex-1"
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
                 >
                   Cancel
                 </button>

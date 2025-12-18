@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
 import { Check, X, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { approvalsAPI } from '../services/api';
-import { offlineService } from '../services/offlineDB';
-import { useOnlineStatus } from '../hooks/useOnlineStatus';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import StatusBadge from '../components/common/StatusBadge';
+import axios from 'axios';
+
+const api = axios.create({ baseURL: 'http://localhost:5000/api' });
+
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
 const Approvals = () => {
   const [approvals, setApprovals] = useState([]);
@@ -14,25 +17,16 @@ const Approvals = () => {
   const [statusFilter, setStatusFilter] = useState('pending');
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedApproval, setSelectedApproval] = useState(null);
-  
-  const isOnline = useOnlineStatus();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm();
+  const [reviewNotes, setReviewNotes] = useState('');
 
   useEffect(() => {
     fetchApprovals();
-  }, [isOnline, statusFilter]);
+  }, [statusFilter]);
 
   const fetchApprovals = async () => {
     try {
-      const filters = { status: statusFilter };
-      
-      if (isOnline) {
-        const response = await approvalsAPI.getApprovals(filters);
-        setApprovals(response.data.requests);
-      } else {
-        const offlineApprovals = await offlineService.getApprovals(filters);
-        setApprovals(offlineApprovals);
-      }
+      const response = await api.get('/approvals', { params: { status: statusFilter, type: 'borrow' } });
+      setApprovals(response.data.requests || []);
     } catch (error) {
       toast.error('Error fetching approvals');
     } finally {
@@ -42,29 +36,26 @@ const Approvals = () => {
 
   const handleReview = (approval, status) => {
     setSelectedApproval({ ...approval, reviewStatus: status });
+    setReviewNotes('');
     setShowReviewModal(true);
   };
 
-  const onSubmitReview = async (data) => {
+  const onSubmitReview = async (e) => {
+    e.preventDefault();
     try {
-      const reviewData = {
+      await api.put(`/approvals/${selectedApproval._id}/review`, {
         status: selectedApproval.reviewStatus,
-        reviewNotes: data.reviewNotes
-      };
-
-      if (isOnline) {
-        await approvalsAPI.reviewApproval(selectedApproval._id || selectedApproval.id, reviewData);
-      } else {
-        await offlineService.reviewApproval(selectedApproval._id || selectedApproval.id, reviewData);
-      }
+        reviewNotes,
+        type: 'borrow'
+      });
       
-      toast.success(`Book ${selectedApproval.reviewStatus} successfully`);
+      toast.success(`Request ${selectedApproval.reviewStatus} successfully`);
       setShowReviewModal(false);
       setSelectedApproval(null);
-      reset();
+      setReviewNotes('');
       fetchApprovals();
     } catch (error) {
-      toast.error('Error reviewing approval');
+      toast.error('Error reviewing request');
     }
   };
 
@@ -73,22 +64,26 @@ const Approvals = () => {
   };
 
   if (loading) {
-    return <LoadingSpinner size="lg" className="h-64" />;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Book Approvals</h1>
-        <p className="text-gray-600 mt-2">Review and approve book donation requests</p>
+        <h1 className="text-3xl font-bold text-gray-900">Borrow Requests</h1>
+        <p className="text-gray-600 mt-2">Review and approve student book requests</p>
       </div>
 
-      <div className="card mb-6">
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="flex gap-4">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="input-field w-48"
+            className="px-3 py-2 border rounded-lg"
           >
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
@@ -99,62 +94,39 @@ const Approvals = () => {
 
       <div className="grid gap-6">
         {approvals.map((approval) => (
-          <div key={approval._id || approval.id} className="card">
+          <div key={approval._id} className="bg-white rounded-lg shadow p-6">
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900">{approval.title}</h3>
-                <p className="text-gray-600">by {approval.author}</p>
+                <h3 className="text-lg font-semibold text-gray-900">{approval.bookId?.title}</h3>
+                <p className="text-gray-600">by {approval.bookId?.author}</p>
               </div>
-              <StatusBadge status={approval.status} />
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                approval.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                approval.status === 'approved' ? 'bg-green-100 text-green-800' :
+                'bg-red-100 text-red-800'
+              }`}>
+                {approval.status}
+              </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <p className="text-sm text-gray-600">ISBN</p>
-                <p className="font-medium">{approval.isbn}</p>
+                <p className="text-sm text-gray-600">Student Name</p>
+                <p className="font-medium">{approval.studentId?.name}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Category</p>
-                <p className="font-medium">{approval.category}</p>
+                <p className="text-sm text-gray-600">Student ID</p>
+                <p className="font-medium">{approval.studentId?.studentId}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Published Year</p>
-                <p className="font-medium">{approval.publishedYear || 'N/A'}</p>
+                <p className="text-sm text-gray-600">Email</p>
+                <p className="font-medium">{approval.studentId?.email}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Submitted Date</p>
+                <p className="text-sm text-gray-600">Request Date</p>
                 <p className="font-medium">{formatDate(approval.createdAt)}</p>
               </div>
             </div>
-
-            {approval.description && (
-              <div className="mb-4">
-                <p className="text-sm text-gray-600">Description</p>
-                <p className="text-gray-800">{approval.description}</p>
-              </div>
-            )}
-
-            {approval.donorName && (
-              <div className="mb-4">
-                <p className="text-sm text-gray-600">Donor Information</p>
-                <p className="font-medium">{approval.donorName}</p>
-                {approval.donorEmail && (
-                  <p className="text-gray-600">{approval.donorEmail}</p>
-                )}
-              </div>
-            )}
-
-            {approval.reviewNotes && (
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Review Notes</p>
-                <p className="text-gray-800">{approval.reviewNotes}</p>
-                {approval.reviewDate && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Reviewed on {formatDate(approval.reviewDate)}
-                  </p>
-                )}
-              </div>
-            )}
 
             {approval.status === 'pending' && (
               <div className="flex gap-3 pt-4 border-t">
@@ -178,7 +150,7 @@ const Approvals = () => {
         ))}
 
         {approvals.length === 0 && (
-          <div className="card text-center py-8">
+          <div className="bg-white rounded-lg shadow p-8 text-center">
             <Clock className="mx-auto text-gray-400 mb-4" size={48} />
             <p className="text-gray-500">No {statusFilter} approval requests found.</p>
           </div>
@@ -193,26 +165,23 @@ const Approvals = () => {
             </h2>
             
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-              <p className="font-medium">{selectedApproval.title}</p>
-              <p className="text-sm text-gray-600">by {selectedApproval.author}</p>
+              <p className="font-medium">{selectedApproval.bookId?.title}</p>
+              <p className="text-sm text-gray-600">by {selectedApproval.bookId?.author}</p>
+              <p className="text-sm text-gray-600 mt-1">Student: {selectedApproval.studentId?.name}</p>
             </div>
             
-            <form onSubmit={handleSubmit(onSubmitReview)} className="space-y-4">
+            <form onSubmit={onSubmitReview} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Review Notes {selectedApproval.reviewStatus === 'rejected' && '(Required)'}
+                  Review Notes (Optional)
                 </label>
                 <textarea
-                  {...register('reviewNotes', {
-                    required: selectedApproval.reviewStatus === 'rejected' ? 'Review notes are required for rejection' : false
-                  })}
+                  value={reviewNotes}
+                  onChange={(e) => setReviewNotes(e.target.value)}
                   rows={4}
-                  className="input-field"
+                  className="w-full px-3 py-2 border rounded-lg"
                   placeholder="Add your review notes..."
                 />
-                {errors.reviewNotes && (
-                  <p className="text-red-500 text-sm">{errors.reviewNotes.message}</p>
-                )}
               </div>
 
               <div className="flex gap-3 pt-4">
@@ -231,9 +200,9 @@ const Approvals = () => {
                   onClick={() => {
                     setShowReviewModal(false);
                     setSelectedApproval(null);
-                    reset();
+                    setReviewNotes('');
                   }}
-                  className="btn-secondary flex-1"
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
                 >
                   Cancel
                 </button>

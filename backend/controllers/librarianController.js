@@ -170,6 +170,57 @@ const getPendingRequests = async (req, res) => {
   }
 };
 
+const getApprovedRequests = async (req, res) => {
+  try {
+    const requests = await BorrowRequest.find({ status: 'approved', taken: { $ne: true } })
+      .populate('studentId', 'name studentId')
+      .populate('bookId', 'title');
+    
+    res.json({ requests });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching approved requests', error: error.message });
+  }
+};
+
+const markAsTaken = async (req, res) => {
+  try {
+    const { requestId } = req.body;
+    const librarianId = req.user.id;
+
+    const request = await BorrowRequest.findById(requestId)
+      .populate('studentId')
+      .populate('bookId');
+    
+    if (!request || request.status !== 'approved') {
+      return res.status(400).json({ message: 'Invalid request' });
+    }
+
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 14);
+
+    const issue = new IssueRecord({
+      bookId: request.bookId._id,
+      studentId: request.studentId._id,
+      studentName: request.studentId.name,
+      studentRollNo: request.studentId.studentId,
+      studentDept: request.studentId.department,
+      studentYear: request.studentId.semester,
+      dueDate,
+      librarianId,
+      issueDate: new Date()
+    });
+
+    await issue.save();
+    request.taken = true;
+    request.takenDate = new Date();
+    await request.save();
+
+    res.json({ message: 'Book marked as taken and issued', issue });
+  } catch (error) {
+    res.status(500).json({ message: 'Error marking as taken', error: error.message });
+  }
+};
+
 module.exports = {
   approveBorrowRequest,
   rejectBorrowRequest,
@@ -177,5 +228,7 @@ module.exports = {
   rejectDonation,
   monitorOverdueStudents,
   viewStudentPenalties,
-  getPendingRequests
+  getPendingRequests,
+  getApprovedRequests,
+  markAsTaken
 };

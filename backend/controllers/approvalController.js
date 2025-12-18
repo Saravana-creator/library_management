@@ -3,7 +3,26 @@ const Book = require('../models/Book');
 
 const getApprovalRequests = async (req, res) => {
   try {
-    const { status = 'pending', page = 1, limit = 10 } = req.query;
+    const { status = 'pending', page = 1, limit = 10, type = 'borrow' } = req.query;
+    
+    if (type === 'borrow') {
+      const { BorrowRequest } = require('../models/Student');
+      const requests = await BorrowRequest.find({ status })
+        .populate('studentId', 'name email studentId')
+        .populate('bookId', 'title author isbn')
+        .limit(limit * 1)
+        .skip((page - 1) * limit)
+        .sort({ createdAt: -1 });
+
+      const total = await BorrowRequest.countDocuments({ status });
+
+      return res.json({
+        requests,
+        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+        total
+      });
+    }
     
     const requests = await ApprovalRequest.find({ status })
       .limit(limit * 1)
@@ -35,7 +54,46 @@ const createApprovalRequest = async (req, res) => {
 
 const reviewApprovalRequest = async (req, res) => {
   try {
-    const { status, reviewNotes } = req.body;
+    const { status, reviewNotes, type = 'borrow' } = req.body;
+    
+    if (type === 'borrow') {
+      const { BorrowRequest } = require('../models/Student');
+      const IssueRecord = require('../models/IssueRecord');
+      const request = await BorrowRequest.findById(req.params.id).populate('bookId studentId');
+
+      if (!request) {
+        return res.status(404).json({ message: 'Request not found' });
+      }
+
+      request.status = status;
+      request.approvedDate = new Date();
+      await request.save();
+
+      if (status === 'approved') {
+        const book = await Book.findById(request.bookId);
+        if (book.availableCopies > 0) {
+          const dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + 14);
+
+          const issueRecord = new IssueRecord({
+            bookId: request.bookId,
+            studentId: request.studentId,
+            studentName: request.studentId.name,
+            studentRollNo: request.studentId.studentId,
+            studentDept: request.studentId.department,
+            dueDate,
+            librarianId: req.user.id
+          });
+          await issueRecord.save();
+
+          book.availableCopies -= 1;
+          await book.save();
+        }
+      }
+
+      return res.json(request);
+    }
+
     const request = await ApprovalRequest.findById(req.params.id);
 
     if (!request) {

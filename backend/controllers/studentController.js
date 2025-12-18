@@ -130,6 +130,19 @@ const getDonationStatus = async (req, res) => {
   }
 };
 
+const getBorrowRequests = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const requests = await BorrowRequest.find({ studentId })
+      .populate('bookId', 'title author')
+      .sort({ createdAt: -1 });
+    
+    res.json({ requests });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching borrow requests', error: error.message });
+  }
+};
+
 const getOverdueBooks = async (req, res) => {
   try {
     const studentId = req.user.id;
@@ -177,13 +190,113 @@ const getOverdueBooks = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const { name, email, phone, department, semester } = req.body;
+    
+    const student = await Student.findByIdAndUpdate(
+      studentId,
+      { name, email, phone, department, semester },
+      { new: true, runValidators: true }
+    ).select('-password');
+    
+    res.json({ message: 'Profile updated successfully', student });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating profile', error: error.message });
+  }
+};
+
+const approveBorrowRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    
+    const request = await BorrowRequest.findById(requestId).populate('bookId');
+    if (!request) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+    
+    const book = await Book.findById(request.bookId);
+    if (book.availableCopies <= 0) {
+      return res.status(400).json({ message: 'No copies available' });
+    }
+    
+    // Update request status and decrease book count
+    request.status = 'approved';
+    request.approvedDate = new Date();
+    await request.save();
+    
+    book.availableCopies -= 1;
+    await book.save();
+    
+    res.json({ message: 'Request approved successfully', request });
+  } catch (error) {
+    res.status(500).json({ message: 'Error approving request', error: error.message });
+  }
+};
+
+const markAsTaken = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    
+    const request = await BorrowRequest.findById(requestId);
+    if (!request || request.status !== 'approved') {
+      return res.status(404).json({ message: 'Approved request not found' });
+    }
+    
+    request.taken = true;
+    request.takenDate = new Date();
+    await request.save();
+    
+    res.json({ message: 'Marked as taken', request });
+  } catch (error) {
+    res.status(500).json({ message: 'Error marking as taken', error: error.message });
+  }
+};
+
+const cleanupExpiredRequests = async () => {
+  try {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    
+    const expiredRequests = await BorrowRequest.find({
+      status: 'approved',
+      taken: false,
+      approvedDate: { $lt: oneWeekAgo }
+    }).populate('bookId');
+    
+    for (const request of expiredRequests) {
+      // Restore book count
+      const book = await Book.findById(request.bookId);
+      if (book) {
+        book.availableCopies += 1;
+        await book.save();
+      }
+      
+      // Delete the request
+      await BorrowRequest.findByIdAndDelete(request._id);
+    }
+    
+    console.log(`Cleaned up ${expiredRequests.length} expired requests`);
+  } catch (error) {
+    console.error('Error cleaning up expired requests:', error);
+  }
+};
+
+// Run cleanup every hour
+setInterval(cleanupExpiredRequests, 60 * 60 * 1000);
+
 module.exports = {
   getBooks,
   requestBorrow,
   getBorrowingHistory,
+  getBorrowRequests,
   checkDeadlineAlerts,
   calculatePenalties,
   donatebook,
   getDonationStatus,
-  getOverdueBooks
+  getOverdueBooks,
+  updateProfile,
+  approveBorrowRequest,
+  markAsTaken
 };

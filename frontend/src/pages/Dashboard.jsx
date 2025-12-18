@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Users, CheckCircle, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -12,6 +13,7 @@ api.interceptors.request.use(config => {
 });
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [librarian, setLibrarian] = useState(null);
   
   useEffect(() => {
@@ -109,21 +111,21 @@ const Dashboard = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
           <div className="space-y-3">
             <button 
-              onClick={() => window.location.href = '/books'}
+              onClick={() => navigate('/books')}
               className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
             >
               <div className="font-medium text-gray-900">Add New Book</div>
               <div className="text-sm text-gray-600">Add a new book to the library</div>
             </button>
             <button 
-              onClick={() => window.location.href = '/issues'}
+              onClick={() => navigate('/issues')}
               className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
             >
               <div className="font-medium text-gray-900">Issue Book</div>
               <div className="text-sm text-gray-600">Issue a book to a student</div>
             </button>
             <button 
-              onClick={() => window.location.href = '/approvals'}
+              onClick={() => navigate('/approvals')}
               className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
             >
               <div className="font-medium text-gray-900">Review Approvals</div>

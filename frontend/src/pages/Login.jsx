@@ -25,11 +25,11 @@ const Login = ({ onLogin, onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="bg-primary-600 p-3 rounded-full">
+            <div className="bg-blue-600 p-3 rounded-full">
               <BookOpen className="text-white" size={32} />
             </div>
           </div>

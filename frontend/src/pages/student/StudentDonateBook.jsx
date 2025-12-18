@@ -25,10 +25,19 @@ const StudentDonateBook = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/approvals', formData);
+      const student = JSON.parse(localStorage.getItem('student'));
+      const donationData = {
+        ...formData,
+        donorName: student?.name || 'Anonymous',
+        donorEmail: student?.email || 'no-email@example.com'
+      };
+      console.log('Submitting donation:', donationData);
+      const response = await api.post('/approvals', donationData);
+      console.log('Donation response:', response.data);
       toast.success('Book donation request submitted successfully');
       setFormData({ title: '', author: '', isbn: '', category: '', description: '', publishedYear: '' });
     } catch (error) {
+      console.error('Donation submission error:', error);
       toast.error('Failed to submit donation request');
     }
   };

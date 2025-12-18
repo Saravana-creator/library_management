@@ -15,11 +15,13 @@ const Login = ({ onLogin, onBack }) => {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('librarian', JSON.stringify(response.data.librarian));
       toast.success('Login successful!');
-      onLogin(response.data.librarian);
+      setTimeout(() => {
+        onLogin(response.data.librarian);
+      },1000);
     } catch (error) {
       toast.error('Invalid credentials');
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

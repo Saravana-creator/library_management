@@ -22,6 +22,12 @@ const StudentLayout = ({ children, onLogout, student }) => (
           📖 My Books
         </NavLink>
         <NavLink 
+          to="/overdue" 
+          className={({ isActive }) => `block px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-red-50 text-red-700' : 'text-gray-600 hover:bg-gray-50'}`}
+        >
+          ⚠️ Overdue
+        </NavLink>
+        <NavLink 
           to="/donate" 
           className={({ isActive }) => `block px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50'}`}
         >

@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 
 const issueRecordSchema = new mongoose.Schema({
   bookId: { type: mongoose.Schema.Types.ObjectId, ref: 'Book', required: true },
-  studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
   studentName: { type: String, required: true },
   studentRollNo: { type: String, required: true },
   studentDept: { type: String },

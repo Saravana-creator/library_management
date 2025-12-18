@@ -3,7 +3,7 @@ const Book = require('../models/Book');
 
 const getApprovalRequests = async (req, res) => {
   try {
-    const { status = 'pending', page = 1, limit = 10, type = 'borrow' } = req.query;
+    const { status = 'pending', page = 1, limit = 10, type } = req.query;
     
     if (type === 'borrow') {
       const { BorrowRequest } = require('../models/Student');
@@ -24,6 +24,7 @@ const getApprovalRequests = async (req, res) => {
       });
     }
     
+    // Default to donation requests (ApprovalRequest model)
     const requests = await ApprovalRequest.find({ status })
       .limit(limit * 1)
       .skip((page - 1) * limit)
@@ -54,7 +55,7 @@ const createApprovalRequest = async (req, res) => {
 
 const reviewApprovalRequest = async (req, res) => {
   try {
-    const { status, reviewNotes, type = 'borrow' } = req.body;
+    const { status, reviewNotes, type, totalCopies } = req.body;
     
     if (type === 'borrow') {
       const { BorrowRequest } = require('../models/Student');
@@ -94,6 +95,7 @@ const reviewApprovalRequest = async (req, res) => {
       return res.json(request);
     }
 
+    // Default to donation requests (ApprovalRequest model)
     const request = await ApprovalRequest.findById(req.params.id);
 
     if (!request) {
@@ -102,19 +104,22 @@ const reviewApprovalRequest = async (req, res) => {
 
     request.status = status;
     request.reviewNotes = reviewNotes;
-    request.reviewedBy = req.user.id;
+    request.reviewedBy = req.user?.id;
     request.reviewDate = new Date();
 
     await request.save();
 
     if (status === 'approved') {
+      const copies = totalCopies || 1;
       const book = new Book({
         title: request.title,
         author: request.author,
         isbn: request.isbn,
         category: request.category,
         description: request.description,
-        publishedYear: request.publishedYear
+        publishedYear: request.publishedYear,
+        totalCopies: copies,
+        availableCopies: copies
       });
       await book.save();
     }

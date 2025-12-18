@@ -13,7 +13,7 @@ const issueBook = async (req, res) => {
     const issueRecord = new IssueRecord({
       bookId,
       studentName,
-      studentId,
+      studentRollNo: studentId,
       dueDate,
       librarianId: req.user.id
     });

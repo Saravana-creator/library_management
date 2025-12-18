@@ -6,6 +6,9 @@ const ApprovedRequests = () => {
   const [approvedRequests, setApprovedRequests] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [returnDate, setReturnDate] = useState('');
 
   useEffect(() => {
     fetchApprovedRequests();
@@ -22,10 +25,25 @@ const ApprovedRequests = () => {
     }
   };
 
-  const handleMarkAsTaken = async (requestId) => {
+  const handleMarkAsTaken = (request) => {
+    setSelectedRequest(request);
+    const defaultReturnDate = new Date();
+    defaultReturnDate.setDate(defaultReturnDate.getDate() + 14);
+    setReturnDate(defaultReturnDate.toISOString().split('T')[0]);
+    setShowDateModal(true);
+  };
+
+  const confirmMarkAsTaken = async () => {
     try {
-      await api.post('/librarian/mark-as-taken', { requestId });
+      // Ensure proper date format (YYYY-MM-DD)
+      const formattedDate = new Date(returnDate + 'T00:00:00.000Z').toISOString();
+      await api.post('/librarian/mark-as-taken', { 
+        requestId: selectedRequest._id,
+        returnDate: formattedDate
+      });
       toast.success('Book marked as taken and issued to student');
+      setShowDateModal(false);
+      setSelectedRequest(null);
       fetchApprovedRequests();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error marking book as taken');
@@ -82,7 +100,7 @@ const ApprovedRequests = () => {
                   </td>
                   <td className="px-6 py-4">
                     <button
-                      onClick={() => handleMarkAsTaken(req._id)}
+                      onClick={() => handleMarkAsTaken(req)}
                       className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
                     >
                       Mark as Taken
@@ -94,6 +112,50 @@ const ApprovedRequests = () => {
           </tbody>
         </table>
       </div>
+
+      {showDateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Set Return Date</h2>
+            <div className="mb-4">
+              <p className="text-gray-600 mb-2">
+                Student: <span className="font-semibold">{selectedRequest?.studentId?.name}</span>
+              </p>
+              <p className="text-gray-600 mb-4">
+                Book: <span className="font-semibold">{selectedRequest?.bookId?.title}</span>
+              </p>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Return Date:
+              </label>
+              <input
+                type="date"
+                value={returnDate}
+                onChange={(e) => setReturnDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                required
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={confirmMarkAsTaken}
+                className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+              >
+                Confirm Issue
+              </button>
+              <button
+                onClick={() => {
+                  setShowDateModal(false);
+                  setSelectedRequest(null);
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

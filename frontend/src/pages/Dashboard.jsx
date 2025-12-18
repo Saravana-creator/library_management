@@ -20,6 +20,7 @@ const Dashboard = () => {
   }, []);
   const [stats, setStats] = useState({
     totalBooks: 0,
+    availableBooks: 0,
     issuedBooks: 0,
     returnedBooks: 0,
     pendingApprovals: 0
@@ -43,8 +44,8 @@ const Dashboard = () => {
 
   const statCards = [
     {
-      title: 'Total Books',
-      value: stats.totalBooks,
+      title: 'Available Books',
+      value: stats.availableBooks,
       icon: BookOpen,
       color: 'bg-blue-500',
       bgColor: 'bg-blue-50'

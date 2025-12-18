@@ -7,7 +7,8 @@ const {
   checkDeadlineAlerts,
   calculatePenalties,
   donatebook,
-  getDonationStatus
+  getDonationStatus,
+  getOverdueBooks
 } = require('../controllers/studentController');
 
 const router = express.Router();
@@ -20,5 +21,6 @@ router.get('/deadline-alerts', authenticate, checkDeadlineAlerts);
 router.get('/penalties', authenticate, calculatePenalties);
 router.post('/donate-book', authenticate, donatebook);
 router.get('/donation-status', authenticate, getDonationStatus);
+router.get('/overdue-books', authenticate, getOverdueBooks);
 
 module.exports = router;

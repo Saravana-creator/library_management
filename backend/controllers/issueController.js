@@ -15,7 +15,7 @@ const issueBook = async (req, res) => {
       studentName,
       studentId,
       dueDate,
-      librarianId: req.librarian._id
+      librarianId: req.user.id
     });
 
     await issueRecord.save();

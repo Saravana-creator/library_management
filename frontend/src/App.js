@@ -9,25 +9,25 @@ const api = axios.create({ baseURL: API_URL });
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
-  if (token) {
+  if (token && token !== 'demo-token') {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-api.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('librarian');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
+const RoleSelection = ({ onSelectRole }) => (
+  <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
+    <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+      <h1 className="text-3xl font-bold text-center mb-8">Library Management System</h1>
+      <div className="space-y-4">
+        <button onClick={() => onSelectRole('librarian')} className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-semibold text-lg">📚 Librarian Login</button>
+        <button onClick={() => onSelectRole('student')} className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold text-lg">👨🎓 Student Login</button>
+      </div>
+    </div>
+  </div>
 );
 
-const Login = ({ onLogin }) => {
+const LibrarianLogin = ({ onLogin, onBack }) => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
 
@@ -38,8 +38,9 @@ const Login = ({ onLogin }) => {
       const response = await api.post('/auth/login', credentials);
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('librarian', JSON.stringify(response.data.librarian));
+      localStorage.setItem('role', 'librarian');
       toast.success('Login successful!');
-      onLogin(response.data.librarian);
+      onLogin('librarian', response.data.librarian);
     } catch (error) {
       toast.error('Invalid credentials');
     }
@@ -49,62 +50,103 @@ const Login = ({ onLogin }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-6">Library Management</h1>
+        <button onClick={onBack} className="text-blue-600 hover:text-blue-800 mb-4">← Back</button>
+        <h1 className="text-2xl font-bold text-center mb-6">Librarian Login</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Username"
-            value={credentials.username}
-            onChange={(e) => setCredentials({...credentials, username: e.target.value})}
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={credentials.password}
-            onChange={(e) => setCredentials({...credentials, password: e.target.value})}
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
+          <input type="text" placeholder="Username" value={credentials.username} onChange={(e) => setCredentials({...credentials, username: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
+          <input type="password" placeholder="Password" value={credentials.password} onChange={(e) => setCredentials({...credentials, password: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
+          <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">{loading ? 'Logging in...' : 'Login'}</button>
         </form>
+        <p className="text-center text-sm text-gray-600 mt-4">Demo: admin / password123</p>
       </div>
     </div>
   );
 };
 
-const Layout = ({ children, onLogout, librarian }) => (
+const StudentAuth = ({ onLogin, onBack }) => {
+  const [isRegister, setIsRegister] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', studentId: '', phone: '', department: '', semester: '' });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const endpoint = isRegister ? '/student-auth/register' : '/student-auth/login';
+      const data = isRegister ? formData : { email: formData.email, password: formData.password };
+      const response = await api.post(endpoint, data);
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('student', JSON.stringify(response.data.student));
+      localStorage.setItem('role', 'student');
+      toast.success(isRegister ? 'Registration successful!' : 'Login successful!');
+      onLogin('student', response.data.student);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error occurred');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+        <button onClick={onBack} className="text-green-600 hover:text-green-800 mb-4">← Back</button>
+        <h1 className="text-2xl font-bold text-center mb-6">{isRegister ? 'Student Register' : 'Student Login'}</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {isRegister && (
+            <>
+              <input type="text" placeholder="Full Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
+              <input type="text" placeholder="Student ID" value={formData.studentId} onChange={(e) => setFormData({...formData, studentId: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
+              <input type="text" placeholder="Department" value={formData.department} onChange={(e) => setFormData({...formData, department: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
+              <input type="number" placeholder="Semester" value={formData.semester} onChange={(e) => setFormData({...formData, semester: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
+              <input type="tel" placeholder="Phone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
+            </>
+          )}
+          <input type="email" placeholder="Email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
+          <input type="password" placeholder="Password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
+          <button type="submit" disabled={loading} className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50">{loading ? 'Processing...' : isRegister ? 'Register' : 'Login'}</button>
+        </form>
+        <button onClick={() => setIsRegister(!isRegister)} className="w-full text-center text-green-600 hover:text-green-800 mt-4 text-sm">{isRegister ? 'Already have account? Login' : 'New student? Register'}</button>
+      </div>
+    </div>
+  );
+};
+
+const LibrarianLayout = ({ children, onLogout, librarian }) => (
   <div className="flex min-h-screen bg-gray-50">
     <div className="bg-white shadow-lg h-screen w-64 fixed left-0 top-0">
       <div className="p-6 border-b">
-        <h1 className="text-xl font-bold text-gray-800">Library System</h1>
-        <p className="text-sm text-gray-600">Welcome, {librarian?.username}</p>
+        <h1 className="text-xl font-bold text-gray-800">📚 Library System</h1>
+        <p className="text-sm text-gray-600">Librarian: {librarian?.username}</p>
       </div>
       <nav className="p-4 space-y-2">
-        <NavLink to="/" className={({ isActive }) => `block px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-          📊 Dashboard
-        </NavLink>
-        <NavLink to="/books" className={({ isActive }) => `block px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-          📚 Books
-        </NavLink>
-        <NavLink to="/issues" className={({ isActive }) => `block px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-          👥 Issues
-        </NavLink>
-        <NavLink to="/approvals" className={({ isActive }) => `block px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-          ✅ Approvals
-        </NavLink>
+        <NavLink to="/librarian" end className={({ isActive }) => `block px-3 py-2 rounded-lg ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>📊 Dashboard</NavLink>
+        <NavLink to="/librarian/books" className={({ isActive }) => `block px-3 py-2 rounded-lg ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>📚 Books</NavLink>
+        <NavLink to="/librarian/requests" className={({ isActive }) => `block px-3 py-2 rounded-lg ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>📋 Requests</NavLink>
+        <NavLink to="/librarian/overdue" className={({ isActive }) => `block px-3 py-2 rounded-lg ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>⚠️ Overdue</NavLink>
+        <NavLink to="/librarian/penalties" className={({ isActive }) => `block px-3 py-2 rounded-lg ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>💰 Penalties</NavLink>
       </nav>
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
-        <button onClick={onLogout} className="w-full px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-          🚪 Logout
-        </button>
+        <button onClick={onLogout} className="w-full px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg">🚪 Logout</button>
+      </div>
+    </div>
+    <main className="flex-1 ml-64 p-8">{children}</main>
+  </div>
+);
+
+const StudentLayout = ({ children, onLogout, student }) => (
+  <div className="flex min-h-screen bg-gray-50">
+    <div className="bg-white shadow-lg h-screen w-64 fixed left-0 top-0">
+      <div className="p-6 border-b">
+        <h1 className="text-xl font-bold text-gray-800">📚 Library</h1>
+        <p className="text-sm text-gray-600">{student?.name}</p>
+      </div>
+      <nav className="p-4 space-y-2">
+        <NavLink to="/student" end className={({ isActive }) => `block px-3 py-2 rounded-lg ${isActive ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50'}`}>📖 Browse Books</NavLink>
+        <NavLink to="/student/my-books" className={({ isActive }) => `block px-3 py-2 rounded-lg ${isActive ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50'}`}>📚 My Books</NavLink>
+        <NavLink to="/student/profile" className={({ isActive }) => `block px-3 py-2 rounded-lg ${isActive ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50'}`}>👤 Profile</NavLink>
+      </nav>
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
+        <button onClick={onLogout} className="w-full px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg">🚪 Logout</button>
       </div>
     </div>
     <main className="flex-1 ml-64 p-8">{children}</main>
@@ -113,39 +155,17 @@ const Layout = ({ children, onLogout, librarian }) => (
 
 const Dashboard = () => {
   const [stats, setStats] = useState({ totalBooks: 0, issuedBooks: 0, returnedBooks: 0, pendingApprovals: 0 });
-
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await api.get('/dashboard/stats');
-        setStats(response.data.stats);
-      } catch (error) {
-        toast.error('Failed to load dashboard stats');
-      }
-    };
-    fetchStats();
+    api.get('/dashboard/stats').then(r => setStats(r.data.stats)).catch(() => {});
   }, []);
-
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700">Total Books</h3>
-          <p className="text-3xl font-bold text-blue-600 mt-2">{stats.totalBooks}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700">Issued Books</h3>
-          <p className="text-3xl font-bold text-orange-600 mt-2">{stats.issuedBooks}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700">Returned Books</h3>
-          <p className="text-3xl font-bold text-green-600 mt-2">{stats.returnedBooks}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-700">Pending Approvals</h3>
-          <p className="text-3xl font-bold text-yellow-600 mt-2">{stats.pendingApprovals}</p>
-        </div>
+        <div className="bg-white p-6 rounded-lg shadow"><h3 className="text-lg font-semibold text-gray-700">Total Books</h3><p className="text-3xl font-bold text-blue-600 mt-2">{stats.totalBooks}</p></div>
+        <div className="bg-white p-6 rounded-lg shadow"><h3 className="text-lg font-semibold text-gray-700">Issued Books</h3><p className="text-3xl font-bold text-orange-600 mt-2">{stats.issuedBooks}</p></div>
+        <div className="bg-white p-6 rounded-lg shadow"><h3 className="text-lg font-semibold text-gray-700">Returned Books</h3><p className="text-3xl font-bold text-green-600 mt-2">{stats.returnedBooks}</p></div>
+        <div className="bg-white p-6 rounded-lg shadow"><h3 className="text-lg font-semibold text-gray-700">Pending Approvals</h3><p className="text-3xl font-bold text-yellow-600 mt-2">{stats.pendingApprovals}</p></div>
       </div>
     </div>
   );
@@ -154,50 +174,29 @@ const Dashboard = () => {
 const Books = () => {
   const [books, setBooks] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [editingBook, setEditingBook] = useState(null);
   const [formData, setFormData] = useState({ title: '', author: '', isbn: '', category: '', totalCopies: 1 });
-
-  useEffect(() => {
-    fetchBooks();
-  }, []);
-
+  
+  useEffect(() => { fetchBooks(); }, []);
+  
   const fetchBooks = async () => {
     try {
       const response = await api.get('/books');
       setBooks(response.data.books || []);
     } catch (error) {
-      toast.error('Failed to load books');
+      console.error('Error:', error);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingBook) {
-        await api.put(`/books/${editingBook._id}`, formData);
-        toast.success('Book updated successfully');
-      } else {
-        await api.post('/books', {...formData, availableCopies: formData.totalCopies});
-        toast.success('Book added successfully');
-      }
+      await api.post('/books', {...formData, availableCopies: formData.totalCopies});
+      toast.success('Book added');
       fetchBooks();
       setShowModal(false);
-      setEditingBook(null);
       setFormData({ title: '', author: '', isbn: '', category: '', totalCopies: 1 });
     } catch (error) {
       toast.error('Error saving book');
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Delete this book?')) {
-      try {
-        await api.delete(`/books/${id}`);
-        toast.success('Book deleted');
-        fetchBooks();
-      } catch (error) {
-        toast.error('Error deleting book');
-      }
     }
   };
 
@@ -216,7 +215,6 @@ const Books = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ISBN</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Copies</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -227,10 +225,6 @@ const Books = () => {
                 <td className="px-6 py-4 text-gray-600">{book.isbn}</td>
                 <td className="px-6 py-4 text-gray-600">{book.category}</td>
                 <td className="px-6 py-4 text-gray-600">{book.availableCopies}/{book.totalCopies}</td>
-                <td className="px-6 py-4 space-x-2">
-                  <button onClick={() => {setEditingBook(book); setFormData(book); setShowModal(true);}} className="text-blue-600 hover:text-blue-800">Edit</button>
-                  <button onClick={() => handleDelete(book._id)} className="text-red-600 hover:text-red-800">Delete</button>
-                </td>
               </tr>
             ))}
           </tbody>
@@ -239,7 +233,7 @@ const Books = () => {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">{editingBook ? 'Edit' : 'Add'} Book</h2>
+            <h2 className="text-xl font-bold mb-4">Add Book</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <input type="text" placeholder="Title" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
               <input type="text" placeholder="Author" value={formData.author} onChange={(e) => setFormData({...formData, author: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
@@ -249,13 +243,11 @@ const Books = () => {
                 <option value="Fiction">Fiction</option>
                 <option value="Non-Fiction">Non-Fiction</option>
                 <option value="Technology">Technology</option>
-                <option value="Science">Science</option>
-                <option value="History">History</option>
               </select>
               <input type="number" placeholder="Total Copies" value={formData.totalCopies} onChange={(e) => setFormData({...formData, totalCopies: e.target.value})} className="w-full px-3 py-2 border rounded-lg" min="1" required />
               <div className="flex gap-3">
-                <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">{editingBook ? 'Update' : 'Add'}</button>
-                <button type="button" onClick={() => {setShowModal(false); setEditingBook(null); setFormData({ title: '', author: '', isbn: '', category: '', totalCopies: 1 });}} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
+                <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Add</button>
+                <button type="button" onClick={() => setShowModal(false)} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
               </div>
             </form>
           </div>
@@ -265,181 +257,87 @@ const Books = () => {
   );
 };
 
-const Issues = () => {
-  const [issues, setIssues] = useState([]);
+const Requests = () => {
+  const [requests, setRequests] = useState([]);
+  const fetchRequests = () => {
+    api.get('/librarian/pending-requests').then(r => setRequests(r.data.borrowRequests || [])).catch(() => {});
+  };
+  const handleApprove = async (requestId) => {
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 14);
+    try {
+      await api.post('/librarian/approve-borrow', { requestId, dueDate: dueDate.toISOString() });
+      toast.success('Request approved');
+      fetchRequests();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error approving');
+    }
+  };
+  const handleReject = async (requestId) => {
+    try {
+      await api.post('/librarian/reject-borrow', { requestId });
+      toast.success('Request rejected');
+      fetchRequests();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error rejecting');
+    }
+  };
+  useEffect(() => { fetchRequests(); }, []);
+  return (
+    <div>
+      <h1 className="text-3xl font-bold mb-6">Pending Requests</h1>
+      <div className="bg-white rounded-lg shadow p-6">{requests.length === 0 ? <p className="text-gray-600">No pending requests</p> : requests.map(req => <div key={req._id} className="p-4 border-b flex justify-between items-center"><div><p className="font-semibold">{req.studentId?.name}</p><p className="text-sm text-gray-600">{req.bookId?.title}</p></div><div className="flex gap-2"><button onClick={() => handleApprove(req._id)} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Approve</button><button onClick={() => handleReject(req._id)} className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Reject</button></div></div>)}</div>
+    </div>
+  );
+};
+
+const Overdue = () => {
+  const [students, setStudents] = useState([]);
+  useEffect(() => {
+    api.get('/librarian/overdue-students').then(r => setStudents(r.data.overdueStudents || [])).catch(() => {});
+  }, []);
+  return (
+    <div>
+      <h1 className="text-3xl font-bold mb-6">Overdue Students</h1>
+      <div className="bg-white rounded-lg shadow p-6">{students.length === 0 ? <p className="text-gray-600">No overdue students</p> : students.map((s, i) => <div key={i} className="p-4 border-b"><p className="font-semibold">{s.name}</p><p className="text-sm text-red-600">{s.daysOverdue} days overdue</p></div>)}</div>
+    </div>
+  );
+};
+
+const Penalties = () => {
+  const [penalties, setPenalties] = useState([]);
+  useEffect(() => {
+    api.get('/librarian/student-penalties').then(r => setPenalties(r.data.penalties || [])).catch(() => {});
+  }, []);
+  return (
+    <div>
+      <h1 className="text-3xl font-bold mb-6">Student Penalties</h1>
+      <div className="bg-white rounded-lg shadow p-6">{penalties.map((p, i) => <div key={i} className="p-4 border-b flex justify-between"><p className="font-semibold">{p.name}</p><p className="text-red-600 font-bold">₹{p.totalPenalty}</p></div>)}</div>
+    </div>
+  );
+};
+
+const StudentBrowseBooks = () => {
   const [books, setBooks] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ bookId: '', studentName: '', studentId: '', dueDate: '' });
-
-  useEffect(() => {
-    fetchIssues();
-    fetchBooks();
-  }, []);
-
-  const fetchIssues = async () => {
+  const handleRequest = async (bookId) => {
     try {
-      const response = await api.get('/issues');
-      setIssues(response.data.records || []);
+      await api.post('/student/borrow-request', { bookId });
+      toast.success('Request submitted successfully');
     } catch (error) {
-      toast.error('Failed to load issues');
+      toast.error(error.response?.data?.message || 'Error submitting request');
     }
   };
-
-  const fetchBooks = async () => {
-    try {
-      const response = await api.get('/books');
-      setBooks(response.data.books?.filter(book => book.availableCopies > 0) || []);
-    } catch (error) {
-      toast.error('Failed to load books');
-    }
-  };
-
-  const handleIssue = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post('/issues/issue', formData);
-      toast.success('Book issued successfully');
-      setShowModal(false);
-      setFormData({ bookId: '', studentName: '', studentId: '', dueDate: '' });
-      fetchIssues();
-      fetchBooks();
-    } catch (error) {
-      toast.error('Error issuing book');
-    }
-  };
-
-  const handleReturn = async (id) => {
-    try {
-      await api.put(`/issues/return/${id}`);
-      toast.success('Book returned successfully');
-      fetchIssues();
-      fetchBooks();
-    } catch (error) {
-      toast.error('Error returning book');
-    }
-  };
-
+  useEffect(() => { api.get('/books').then(r => setBooks(r.data.books || [])).catch(() => {}); }, []);
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Issue & Return Books</h1>
-        <button onClick={() => setShowModal(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">+ Issue Book</button>
-      </div>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Book</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Issue Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {issues.map(issue => (
-              <tr key={issue._id}>
-                <td className="px-6 py-4 font-medium">{issue.bookId?.title || 'Unknown Book'}</td>
-                <td className="px-6 py-4">
-                  <div className="font-medium">{issue.studentName}</div>
-                  <div className="text-sm text-gray-500">{issue.studentId}</div>
-                </td>
-                <td className="px-6 py-4 text-gray-600">{new Date(issue.issueDate).toLocaleDateString()}</td>
-                <td className="px-6 py-4 text-gray-600">{new Date(issue.dueDate).toLocaleDateString()}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${issue.status === 'issued' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
-                    {issue.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  {issue.status === 'issued' && (
-                    <button onClick={() => handleReturn(issue._id)} className="text-green-600 hover:text-green-800">Return</button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Issue Book</h2>
-            <form onSubmit={handleIssue} className="space-y-4">
-              <select value={formData.bookId} onChange={(e) => setFormData({...formData, bookId: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required>
-                <option value="">Select Book</option>
-                {books.map(book => <option key={book._id} value={book._id}>{book.title} (Available: {book.availableCopies})</option>)}
-              </select>
-              <input type="text" placeholder="Student Name" value={formData.studentName} onChange={(e) => setFormData({...formData, studentName: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
-              <input type="text" placeholder="Student ID" value={formData.studentId} onChange={(e) => setFormData({...formData, studentId: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
-              <input type="date" value={formData.dueDate} onChange={(e) => setFormData({...formData, dueDate: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
-              <div className="flex gap-3">
-                <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Issue Book</button>
-                <button type="button" onClick={() => {setShowModal(false); setFormData({ bookId: '', studentName: '', studentId: '', dueDate: '' });}} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const Approvals = () => {
-  const [approvals, setApprovals] = useState([]);
-
-  useEffect(() => {
-    fetchApprovals();
-  }, []);
-
-  const fetchApprovals = async () => {
-    try {
-      const response = await api.get('/approvals');
-      setApprovals(response.data.requests || []);
-    } catch (error) {
-      toast.error('Failed to load approvals');
-    }
-  };
-
-  const handleApproval = async (id, status) => {
-    try {
-      await api.put(`/approvals/${id}/review`, { status, reviewNotes: `${status} by librarian` });
-      toast.success(`Request ${status} successfully`);
-      fetchApprovals();
-    } catch (error) {
-      toast.error('Error updating approval');
-    }
-  };
-
-  return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Book Approvals</h1>
-      <div className="space-y-4">
-        {approvals.map(approval => (
-          <div key={approval._id} className="bg-white rounded-lg shadow p-6">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold">{approval.title}</h3>
-                <p className="text-gray-600">by {approval.author}</p>
-                <div className="mt-2 space-y-1 text-sm text-gray-500">
-                  <p>ISBN: {approval.isbn}</p>
-                  <p>Category: {approval.category}</p>
-                  <p>Donor: {approval.donorName}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${approval.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : approval.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                  {approval.status}
-                </span>
-                {approval.status === 'pending' && (
-                  <div className="space-x-2">
-                    <button onClick={() => handleApproval(approval._id, 'approved')} className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">Approve</button>
-                    <button onClick={() => handleApproval(approval._id, 'rejected')} className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">Reject</button>
-                  </div>
-                )}
-              </div>
-            </div>
+      <h1 className="text-3xl font-bold mb-6">Browse Books</h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {books.map(book => (
+          <div key={book._id} className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold">{book.title}</h3>
+            <p className="text-gray-600">by {book.author}</p>
+            <p className="text-sm text-gray-500 mt-2">Available: {book.availableCopies}/{book.totalCopies}</p>
+            <button onClick={() => handleRequest(book._id)} disabled={book.availableCopies === 0} className="w-full mt-4 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50">{book.availableCopies === 0 ? 'Not Available' : 'Request Book'}</button>
           </div>
         ))}
       </div>
@@ -447,46 +345,84 @@ const Approvals = () => {
   );
 };
 
+const StudentMyBooks = () => <div><h1 className="text-3xl font-bold mb-6">My Books</h1><div className="bg-white rounded-lg shadow p-6"><p className="text-gray-600">No books issued yet</p></div></div>;
+
+const StudentProfile = () => {
+  const student = JSON.parse(localStorage.getItem('student') || '{}');
+  return (
+    <div>
+      <h1 className="text-3xl font-bold mb-6">My Profile</h1>
+      <div className="bg-white rounded-lg shadow p-6 max-w-md space-y-4">
+        <div><p className="text-sm text-gray-600">Name</p><p className="text-lg font-semibold">{student.name}</p></div>
+        <div><p className="text-sm text-gray-600">Email</p><p className="text-lg font-semibold">{student.email}</p></div>
+        <div><p className="text-sm text-gray-600">Student ID</p><p className="text-lg font-semibold">{student.studentId}</p></div>
+      </div>
+    </div>
+  );
+};
+
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentRole, setCurrentRole] = useState(null);
+  const [selectedRole, setSelectedRole] = useState(null);
   const [librarian, setLibrarian] = useState(null);
+  const [student, setStudent] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedLibrarian = localStorage.getItem('librarian');
-    if (token && storedLibrarian) {
-      setIsAuthenticated(true);
-      setLibrarian(JSON.parse(storedLibrarian));
+    const role = localStorage.getItem('role');
+    const librarianData = localStorage.getItem('librarian');
+    const studentData = localStorage.getItem('student');
+    if (role === 'librarian' && librarianData) {
+      setCurrentRole('librarian');
+      setLibrarian(JSON.parse(librarianData));
+    } else if (role === 'student' && studentData) {
+      setCurrentRole('student');
+      setStudent(JSON.parse(studentData));
     }
   }, []);
 
-  const handleLogin = (librarianData) => {
-    setIsAuthenticated(true);
-    setLibrarian(librarianData);
+  const handleLogin = (role, data) => {
+    setCurrentRole(role);
+    if (role === 'librarian') setLibrarian(data);
+    else setStudent(data);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('librarian');
-    setIsAuthenticated(false);
+    localStorage.clear();
+    setCurrentRole(null);
+    setSelectedRole(null);
     setLibrarian(null);
+    setStudent(null);
   };
+
+  if (!currentRole) {
+    if (!selectedRole) return <RoleSelection onSelectRole={setSelectedRole} />;
+    if (selectedRole === 'librarian') return <LibrarianLogin onLogin={handleLogin} onBack={() => setSelectedRole(null)} />;
+    if (selectedRole === 'student') return <StudentAuth onLogin={handleLogin} onBack={() => setSelectedRole(null)} />;
+  }
 
   return (
     <Router>
       <div className="App">
-        {!isAuthenticated ? (
-          <Login onLogin={handleLogin} />
-        ) : (
-          <Layout onLogout={handleLogout} librarian={librarian}>
+        {currentRole === 'librarian' ? (
+          <LibrarianLayout onLogout={handleLogout} librarian={librarian}>
             <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/books" element={<Books />} />
-              <Route path="/issues" element={<Issues />} />
-              <Route path="/approvals" element={<Approvals />} />
-              <Route path="*" element={<Navigate to="/" />} />
+              <Route path="/librarian" element={<Dashboard />} />
+              <Route path="/librarian/books" element={<Books />} />
+              <Route path="/librarian/requests" element={<Requests />} />
+              <Route path="/librarian/overdue" element={<Overdue />} />
+              <Route path="/librarian/penalties" element={<Penalties />} />
+              <Route path="*" element={<Navigate to="/librarian" />} />
             </Routes>
-          </Layout>
+          </LibrarianLayout>
+        ) : (
+          <StudentLayout onLogout={handleLogout} student={student}>
+            <Routes>
+              <Route path="/student" element={<StudentBrowseBooks />} />
+              <Route path="/student/my-books" element={<StudentMyBooks />} />
+              <Route path="/student/profile" element={<StudentProfile />} />
+              <Route path="*" element={<Navigate to="/student" />} />
+            </Routes>
+          </StudentLayout>
         )}
         <Toaster position="top-right" />
       </div>

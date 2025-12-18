@@ -1,14 +1,13 @@
 const express = require('express');
 const { body } = require('express-validator');
 const { getBooks, createBook, updateBook, deleteBook } = require('../controllers/bookController');
-const auth = require('../middleware/auth');
-const roleAuth = require('../middleware/roleAuth');
+const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', auth, getBooks);
+router.get('/', getBooks);
 
-router.post('/', auth, roleAuth('librarian'), [
+router.post('/', authenticate, [
   body('title').notEmpty().withMessage('Title is required'),
   body('author').notEmpty().withMessage('Author is required'),
   body('isbn').notEmpty().withMessage('ISBN is required'),
@@ -16,7 +15,7 @@ router.post('/', auth, roleAuth('librarian'), [
   body('totalCopies').isInt({ min: 1 }).withMessage('Total copies must be at least 1')
 ], createBook);
 
-router.put('/:id', auth, roleAuth('librarian'), updateBook);
-router.delete('/:id', auth, roleAuth('librarian'), deleteBook);
+router.put('/:id', authenticate, updateBook);
+router.delete('/:id', authenticate, deleteBook);
 
 module.exports = router;

@@ -1,31 +1,17 @@
 const jwt = require('jsonwebtoken');
-const Librarian = require('../models/Librarian');
 
-const auth = async (req, res, next) => {
+const authenticate = (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
-      return res.status(401).json({ message: 'Access denied. No token provided.' });
+      return res.status(401).json({ message: 'No token provided' });
     }
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const librarian = await Librarian.findById(decoded.id);
-    
-    if (!librarian) {
-      return res.status(401).json({ message: 'Invalid token.' });
-    }
-
-    req.librarian = librarian;
+    req.user = decoded;
     next();
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ message: 'Invalid token.' });
-    }
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token expired.' });
-    }
-    res.status(401).json({ message: 'Authentication failed.' });
+    res.status(401).json({ message: 'Invalid token' });
   }
 };
 
-module.exports = auth;
+module.exports = { authenticate };

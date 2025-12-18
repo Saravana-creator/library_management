@@ -6,7 +6,6 @@ const getApprovalRequests = async (req, res) => {
     const { status = 'pending', page = 1, limit = 10 } = req.query;
     
     const requests = await ApprovalRequest.find({ status })
-      .populate('reviewedBy', 'username')
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 });
@@ -45,7 +44,7 @@ const reviewApprovalRequest = async (req, res) => {
 
     request.status = status;
     request.reviewNotes = reviewNotes;
-    request.reviewedBy = req.librarian._id;
+    request.reviewedBy = req.user.id;
     request.reviewDate = new Date();
 
     await request.save();
@@ -62,7 +61,7 @@ const reviewApprovalRequest = async (req, res) => {
       await book.save();
     }
 
-    res.json(await request.populate('reviewedBy', 'username'));
+    res.json(request);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

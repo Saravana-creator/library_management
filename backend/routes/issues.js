@@ -1,6 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { issueBook, returnBook, getIssueRecords } = require('../controllers/issueController');
+const { issueBook, returnBook, getIssueRecords, getStudentDetails } = require('../controllers/issueController');
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
@@ -14,5 +14,6 @@ router.post('/issue', authenticate, [
 
 router.put('/return/:id', authenticate, returnBook);
 router.get('/', authenticate, getIssueRecords);
+router.get('/:id/student-details', authenticate, getStudentDetails);
 
 module.exports = router;

@@ -72,4 +72,32 @@ const getIssueRecords = async (req, res) => {
   }
 };
 
-module.exports = { issueBook, returnBook, getIssueRecords };
+const getStudentDetails = async (req, res) => {
+  try {
+    const { Student } = require('../models/Student');
+    const issue = await IssueRecord.findById(req.params.id);
+    
+    if (!issue) {
+      return res.status(404).json({ message: 'Issue record not found' });
+    }
+
+    const student = await Student.findById(issue.studentId);
+    
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    res.json({
+      student: {
+        name: student.name,
+        department: student.department,
+        phone: student.phone,
+        email: student.email
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+module.exports = { issueBook, returnBook, getIssueRecords, getStudentDetails };
